@@ -26,9 +26,7 @@ const errorHandler = (err, req, res, next) => {
     message = 'Validation failed.';
   }
 
-  if (process.env.NODE_ENV !== 'production' && !(err instanceof ApiError)) {
-    console.error(err);
-  }
+  console.error(err);
 
   res.status(statusCode).json({
     success: false,
