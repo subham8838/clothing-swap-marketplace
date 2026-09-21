@@ -10,7 +10,6 @@ const storage = new CloudinaryStorage({
   params: {
     folder: 'clothing-swap-marketplace',
     allowed_formats: ['jpg', 'jpeg', 'png', 'webp'],
-    transformation: [{ width: 1200, height: 1200, crop: 'limit', quality: 'auto' }],
   },
 });
 
