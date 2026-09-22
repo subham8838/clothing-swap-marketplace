@@ -4,6 +4,7 @@ const ApiError = require('../utils/ApiError');
 const asyncHandler = require('../utils/asyncHandler');
 const { success } = require('../utils/apiResponse');
 const { calculateEstimatedValue } = require('../utils/valueCalculator');
+const { uploadBufferToCloudinary } = require('../utils/cloudinaryUpload');
 
 // @route GET /api/clothing
 const getClothingList = asyncHandler(async (req, res) => {
@@ -81,13 +82,17 @@ const getClothingById = asyncHandler(async (req, res) => {
 
 // @route POST /api/clothing
 const createClothing = asyncHandler(async (req, res) => {
+  
   if (!req.files || req.files.length === 0) {
     throw new ApiError(400, 'At least one image is required.');
   }
 
-  const images = req.files.map((file, idx) => ({
-    url: file.path,
-    publicId: file.filename,
+   const uploadResults = await Promise.all(
+    req.files.map((file) => uploadBufferToCloudinary(file.buffer))
+  );
+  const images = uploadResults.map((result, idx) => ({
+    url: result.secure_url,
+    publicId: result.public_id,
     isPrimary: idx === 0,
   }));
 
@@ -118,10 +123,17 @@ const updateClothing = asyncHandler(async (req, res) => {
 
   Object.assign(item, req.body);
 
-  if (req.files && req.files.length > 0) {
+    if (req.files && req.files.length > 0) {
     // remove old images from cloudinary
     await Promise.all(item.images.map((img) => cloudinary.uploader.destroy(img.publicId).catch(() => {})));
-    item.images = req.files.map((file, idx) => ({ url: file.path, publicId: file.filename, isPrimary: idx === 0 }));
+    const uploadResults = await Promise.all(
+      req.files.map((file) => uploadBufferToCloudinary(file.buffer))
+    );
+    item.images = uploadResults.map((result, idx) => ({
+      url: result.secure_url,
+      publicId: result.public_id,
+      isPrimary: idx === 0,
+    }));
   }
 
   await item.save();
